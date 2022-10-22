@@ -1,24 +1,31 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": false,
-    "noEmit": true,
-    "incremental": true,
-    "esModuleInterop": true,
-    "module": "ESNext",
+    "target": "ES2022",
+    "module": "Node16",
+    "lib": ["ES2022"],
     "moduleResolution": "Node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
+    "rootDir": ".",
+    "outDir": "build",
+    "allowSyntheticDefaultImports": true,
+    "importHelpers": true,
+    "alwaysStrict": true,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "strictNullChecks": false,
     "baseUrl": ".",
     "paths": {
       "@utils/*": ["./src/utils/*"],
       "@lib/*": ["./src/lib/*"],
-      "@type/*": ["./src/types/*"]
+      "@type/*": ["./src/types/*"],
+      "@abi/*": ["./src/abi/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx,", "**/*.js", "**/*.jsx", "./src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*"]
 }

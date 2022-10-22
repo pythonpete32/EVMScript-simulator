@@ -1,33 +1,26 @@
-import { JsonRpcProvider } from "@ethersproject/providers";
-import axios, { AxiosResponse } from "axios";
-import * as dotenv from "dotenv";
-import { Signer } from "ethers";
-import { TenderlyFork } from "@type/index";
-
+import { JsonRpcProvider } from '@ethersproject/providers';
+import axios from 'axios';
+import * as dotenv from 'dotenv';
+import { ethers } from 'ethers';
+import { AragonTenderlyFork, TenderlyFork } from '@type/index';
+import config from '../../config';
+import abi from '../../abis/agent';
 dotenv.config();
-
-export type EthersOnTenderlyFork = {
-  id: number;
-  provider: JsonRpcProvider;
-  blockNumber: number;
-  /**
-   * map from address to given address' balance
-   */
-  accounts: { [key: string]: string };
-  signers: Signer[];
-  removeFork: () => Promise<AxiosResponse<any, any>>;
-};
 
 export const anAxiosOnTenderly = () =>
   axios.create({
-    baseURL: "https://api.tenderly.co/api/v1",
+    baseURL: 'https://api.tenderly.co/api/v1',
     headers: {
-      "X-Access-Key": process.env.TENDERLY_ACCESS_KEY || "",
-      "Content-Type": "application/json",
+      'X-Access-Key': process.env.TENDERLY_ACCESS_KEY || '',
+      'Content-Type': 'application/json',
     },
   });
 
-export async function forkForTest(fork: TenderlyFork): Promise<EthersOnTenderlyFork> {
+export async function forkForTest(): Promise<AragonTenderlyFork> {
+  const fork: TenderlyFork = {
+    network_id: String(config.networkId),
+  };
+
   const projectUrl = `account/${process.env.TENDERLY_USER}/project/${process.env.TENDERLY_PROJECT}`;
   const axiosOnTenderly = anAxiosOnTenderly();
 
@@ -35,14 +28,19 @@ export async function forkForTest(fork: TenderlyFork): Promise<EthersOnTenderlyF
   const forkId = forkResponse.data.root_transaction.fork_id;
 
   const provider = new JsonRpcProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-
-  const bn = (forkResponse.data.root_transaction.receipt.blockNumber as string).replace("0x", "");
+  await provider.send('tenderly_setBalance', [
+    config.voting,
+    ethers.utils.hexValue(ethers.utils.parseUnits('10', 'ether').toHexString()),
+  ]);
+  const bn = (forkResponse.data.root_transaction.receipt.blockNumber as string).replace('0x', '');
   const blockNumber: number = Number.parseInt(bn, 16);
 
-  console.info("Forked with fork id at block number", forkId, blockNumber);
+  console.info('Forked with fork id at block number', forkId, blockNumber);
 
   const accounts = forkResponse.data.simulation_fork.accounts;
   const signers = Object.keys(accounts).map((address) => provider.getSigner(address));
+
+  const agent = new ethers.Contract(config.agent, abi, provider);
 
   return {
     provider,
@@ -50,8 +48,10 @@ export async function forkForTest(fork: TenderlyFork): Promise<EthersOnTenderlyF
     signers,
     blockNumber,
     id: forkId,
+    agent,
+    fork,
     removeFork: async () => {
-      console.log("Removing test fork", forkId);
+      console.log('Removing test fork', forkId);
       return await axiosOnTenderly.delete(`${projectUrl}/fork/${forkId}`);
     },
   };
@@ -62,5 +62,5 @@ export const tenderlyProjectUrl = () =>
 
 export const tenderlyProjectOperation = (...path: any[]) =>
   [`account/${process.env.TENDERLY_USER}/project/${process.env.TENDERLY_PROJECT}`, ...path]
-    .join("/")
-    .replace("//", "");
+    .join('/')
+    .replace('//', '');

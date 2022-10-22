@@ -1,4 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import { AxiosResponse } from "axios";
+import { Contract, Signer } from "ethers";
 
 export type Address = string;
 
@@ -12,6 +15,20 @@ export type TxSettings = {
 export type CallScriptAction = {
   to: string;
   data: string;
+};
+
+export type AragonTenderlyFork = {
+  id: number;
+  provider: JsonRpcProvider;
+  blockNumber: number;
+  agent: Contract;
+  /**
+   * map from address to given address' balance
+   */
+  accounts: { [key: string]: string };
+  signers: Signer[];
+  fork: TenderlyFork;
+  removeFork: () => Promise<AxiosResponse<any, any>>;
 };
 
 export type TenderlyFork = {

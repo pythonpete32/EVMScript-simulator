@@ -1,15 +1,15 @@
-import { Address, TxSettings } from "@type/index";
-import createCallScript from "./createCallScript";
+import { Address, TxSettings } from '@type/index';
+import { createCallScript } from './createCallScript';
 
 export default function createVoteScript(
   votingAddress: Address,
   metadata: string,
-  txSettings: TxSettings
+  txSettings: TxSettings,
 ) {
   const targetScript = createCallScript(txSettings);
   const voteScript = createCallScript({
     to: votingAddress,
-    signature: "newVote(bytes,string,bool,bool)",
+    signature: 'newVote(bytes,string,bool,bool)',
     args: [targetScript, metadata, true, false],
   });
   return voteScript;
