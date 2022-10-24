@@ -1,7 +1,7 @@
-import { BigNumber } from "@ethersproject/bignumber";
-import { JsonRpcProvider } from "@ethersproject/providers";
-import { AxiosResponse } from "axios";
-import { Contract, Signer } from "ethers";
+import { BigNumber } from '@ethersproject/bignumber';
+import { JsonRpcProvider } from '@ethersproject/providers';
+import { AxiosResponse } from 'axios';
+import { Contract, Signer } from 'ethers';
 
 export type Address = string;
 
@@ -50,4 +50,12 @@ export type TenderlyFork = {
     istanbul_block: number;
     berlin_block: number;
   };
+};
+
+export type ForkCliProps = {
+  user: string;
+  project: string;
+  agentAddress: string;
+  votingAddress: string;
+  tenderlyKey: string;
 };

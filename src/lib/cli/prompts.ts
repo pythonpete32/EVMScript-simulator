@@ -1,5 +1,6 @@
 import { prompt } from 'enquirer';
 import { Interface } from 'ethers/lib/utils';
+import { getInterfaceFromEtherscan } from './helpers';
 
 export async function tenderlyPrompt() {
   const response: any = await prompt([
@@ -10,12 +11,21 @@ export async function tenderlyPrompt() {
       choices: [
         { name: 'project', message: 'Tenderly Project   ' },
         { name: 'user', message: 'Tenderly Username  ' },
-        { name: 'tenderlyKey', message: 'Tenderly Access Key' },
-      ],
+        // { name: 'tenderlyKey', message: 'Tenderly Access Key' },
+      ] as any,
     },
   ]);
-  return { ...response.name };
+
+  const key: any = await prompt([
+    {
+      type: 'password',
+      name: 'name',
+      message: 'Tenderly Access Key',
+    },
+  ]);
+  return { ...response.name, tenderlyKey: key.name };
 }
+
 export async function daoPrompt() {
   const response: any = await prompt([
     {
@@ -26,14 +36,14 @@ export async function daoPrompt() {
         {
           name: 'agentAddress',
           message: 'Agent Address   ',
-          // initial: '0x336252602b3a8a0be336ed942228305173e8082b' as string,
+          initial: '0x336252602b3a8a0be336ed942228305173e8082b' as string,
         },
         {
           name: 'votingAddress',
           message: 'Voting Address  ',
-          // initial: '0x92462953792d3e84af56edfc74d93e5885d38cc0',
+          initial: '0x92462953792d3e84af56edfc74d93e5885d38cc0',
         },
-      ],
+      ] as any,
     },
   ]);
   return { ...response.name };
@@ -76,7 +86,22 @@ export async function functionSelectPrompt(contract: Interface) {
   return func.name;
 }
 
-export async function anotherTransactionPrompt() {
+export async function transactionPrompt() {
+  const contractAddress: string = await contractAddressPrompt();
+  const iface: Interface = await getInterfaceFromEtherscan(contractAddress);
+  const func: string = await functionSelectPrompt(iface);
+
+  const txArgs = await functionArgsPrompt(iface, func);
+  console.log('txArgs', txArgs);
+
+  return {
+    to: contractAddress,
+    signature: func,
+    args: txArgs,
+  };
+}
+
+export async function moreTxPrompt() {
   const response: { name: boolean } = await prompt({
     type: 'confirm',
     name: 'name',

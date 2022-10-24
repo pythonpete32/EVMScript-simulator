@@ -2,9 +2,11 @@ import { JsonRpcProvider } from '@ethersproject/providers';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
 import { ethers } from 'ethers';
-import { AragonTenderlyFork, TenderlyFork } from '@type/index';
+import { AragonTenderlyFork, ForkCliProps, TenderlyFork } from '@type/index';
 import config from '../../config';
 import abi from '../../abis/agent';
+import chalk from 'chalk';
+
 dotenv.config();
 
 export const anAxiosOnTenderly = () =>
@@ -36,6 +38,9 @@ export async function forkForTest(): Promise<AragonTenderlyFork> {
   const blockNumber: number = Number.parseInt(bn, 16);
 
   console.info('Forked with fork id at block number', forkId, blockNumber);
+  console.log(
+    `https://dashboard.tenderly.co/${process.env.TENDERLY_USER}/${process.env.TENDERLY_PROJECT}/fork/${forkId}`,
+  );
 
   const accounts = forkResponse.data.simulation_fork.accounts;
   const signers = Object.keys(accounts).map((address) => provider.getSigner(address));
@@ -56,14 +61,6 @@ export async function forkForTest(): Promise<AragonTenderlyFork> {
     },
   };
 }
-
-type ForkCliProps = {
-  user: string;
-  project: string;
-  agentAddress: string;
-  votingAddress: string;
-  tenderlyKey: string;
-};
 
 export async function forkForCli({
   user,
@@ -96,7 +93,10 @@ export async function forkForCli({
   const bn = (forkResponse.data.root_transaction.receipt.blockNumber as string).replace('0x', '');
   const blockNumber: number = Number.parseInt(bn, 16);
 
-  console.info('Forked with fork id at block number', forkId, blockNumber);
+  console.log(`fork id:      ${chalk.bgGray(forkId)}`);
+  console.log(`block number: ${chalk.bgBlue(blockNumber)}`);
+  console.log(`\nview simulation results here 👇`);
+  console.log(chalk.greenBright(`https://dashboard.tenderly.co/${user}/${project}/fork/${forkId}`));
 
   const accounts = forkResponse.data.simulation_fork.accounts;
   const signers = Object.keys(accounts).map((address) => provider.getSigner(address));
@@ -116,6 +116,23 @@ export async function forkForCli({
       return await axiosOnTenderly.delete(`${projectUrl}/fork/${forkId}`);
     },
   };
+}
+
+export async function simulateTransaction(
+  provider: ethers.providers.JsonRpcProvider,
+  config: any,
+  unsignedTx: ethers.PopulatedTransaction,
+) {
+  return await provider.send('eth_sendTransaction', [
+    {
+      to: config.agentAddress,
+      from: config.votingAddress,
+      data: unsignedTx.data,
+      gas: ethers.utils.hexValue(500000),
+      gasPrice: ethers.utils.hexValue(1),
+      value: ethers.utils.hexValue(0),
+    },
+  ]);
 }
 
 export const tenderlyProjectUrl = () =>
