@@ -1,9 +1,9 @@
-import * as dotenv from 'dotenv';
 import config from './config';
-import { createBatchCallScript } from './lib/aragon';
-import { ContractReceipt, ethers } from 'ethers';
-import abi from './abis/voting';
-dotenv.config();
+import { createBatchCallScript, createCallScript } from './lib/aragon';
+import { ethers } from 'ethers';
+
+// abis
+const VOTING_ABI = ['function newVote(bytes _evmScript, string _metadata, bool _castVote, bool _executesIfDecided)'];
 
 async function run() {
   // 0. get connect to frame
@@ -11,17 +11,23 @@ async function run() {
   const signer = provider.getSigner(0);
   console.log('signer address', await signer.getAddress());
 
-  // 1. create the voting contract instance
-  const voting = new ethers.Contract(config.voting, abi, signer);
+  // 1. create the target callscript
+  const targetScript = createBatchCallScript(config.transactions);
 
-  // 2. create the callscript
-  const evmScript = createBatchCallScript(config.transactions);
-  console.log(`--------\n${evmScript}\n--------`);
+  // 2. pass it to the agent creating another callscript
+  const agentScript = createCallScript({
+    to: config.agent,
+    signature: 'forward(bytes)',
+    args: [targetScript],
+  });
 
-  // 3. execute the transaction on the app
-  const tx = await voting.newVote(evmScript, 'metadata');
-  const receipt: ContractReceipt = await tx.wait();
-  console.log('receipt', receipt.transactionHash);
+  // 3. log the script for testing in tenderly
+  console.log(`--------\n${agentScript}\n--------`);
+
+  // 4. create contract instance
+  const voting = new ethers.Contract(config.voting, VOTING_ABI, signer);
+  const tx = await voting.newVote(agentScript, 'metadata');
+  console.log('tx hash', tx.hash);
 }
 
 run().catch((error) => {
