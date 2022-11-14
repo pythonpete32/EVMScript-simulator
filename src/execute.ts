@@ -22,13 +22,20 @@ async function run() {
     signature: 'forward(bytes)',
     args: [agentScript],
   });
+  
+  // 3. pass it to the voting app creating another callscript
+  const tmScript = createCallScript({
+    to: config.voting,
+    signature: 'newVote(bytes,string)',
+    args: [agentScript,"NEW VOTE"],
+  });
 
-  // 3. log the script for testing in tenderly
-  console.log(`--------\n${voteScript}\n--------`);
+  // 4. log the script for testing in tenderly
+  console.log(`--------\n${tmScript}\n--------`);
 
-  // 4. create contract instance
-  const voting = new ethers.Contract(config.voting, VOTING_ABI, signer);
-  const tx = await voting.newVote(voteScript, 'metadata', true, true);
+  // 5. create contract instance
+  const tokenManager = new ethers.Contract(config.tokenManager, ["function forward(bytes)"], signer);
+  const tx = await tokenManager.forward(tmScript);
   console.log('tx hash', tx.hash);
 }
 
